@@ -1,33 +1,186 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// import reactLogo from './assets/react.svg'
+// import viteLogo from '/vite.svg'
+// import './App.css'
+import { Cell } from "./interfaces"
+
+const getNewCell = () => ({
+  isOpened: false,
+  content: '',
+  meta: 0
+})
+
+const isIndexInNeighbourRange = (index: number, baseIndex: number) => {
+  if (index < 0 || index > 80) return false
+  if (baseIndex === -1) return true
+  const rowIndex1 = Math.floor(Math.abs(baseIndex) / 9)
+  const rowIndex2 = Math.floor(Math.abs(index) / 9)
+  return rowIndex1 === rowIndex2
+};
+
+const setNeighbourCellContent = (
+  field: Cell[], index: number, baseIndex = -1,
+): void => {
+  if (!isIndexInNeighbourRange(index, baseIndex) || field[index].meta < 0) return
+
+  field[index].meta++;
+  field[index].content = field[index].meta.toString();
+}
+
+const genNewField = () => {
+  const field: Cell[] = []
+
+  for (let ii = 0; ii < 81; ii++) {
+    field.push(getNewCell())
+  }
+
+  const indexes = new Set<number>()
+  while (indexes.size < 10) {
+    const index = Math.round(Math.random() * 80)
+    if (indexes.has(index)) continue;
+    field[index].meta = -1
+    indexes.add(index)
+  }
+
+  indexes.forEach(index => {
+    setNeighbourCellContent(field, index - 9 - 1, index - 9);
+    setNeighbourCellContent(field, index - 9);
+    setNeighbourCellContent(field, index - 9 + 1, index - 9);
+    setNeighbourCellContent(field, index - 1, index);
+    setNeighbourCellContent(field, index + 1, index);
+    setNeighbourCellContent(field, index + 9 - 1, index + 9);
+    setNeighbourCellContent(field, index + 9);
+    setNeighbourCellContent(field, index + 9 + 1, index + 9);
+  })
+
+  return field
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [field, setField] = useState<Cell[]>([])
+  const [bombsLeft, setBombsLeft] = useState<number>(0)
+  const [secondsLeft, setSecondsLeft] = useState<number>(0)
+
+  const newGameHander = () => {
+    setField(genNewField())
+    setBombsLeft(10)
+    setSecondsLeft(100)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fieldClickHandler = (event: any) => {
+    if (secondsLeft === 0) return
+
+    const { target } = event
+    const index = parseInt(target.getAttribute('data-index'), 10)
+    const cell = field[index]
+
+    if (!event.shiftKey) {
+      if (!cell || cell.isOpened) return
+
+      // left button
+      if (cell.meta === -1) {
+        terminateGame(index)
+      } else {
+        openCell(index)
+      }
+    } else {
+      // right button
+      toggleBombCell(index)
+    }
+  }
+
+  const terminateGame = (index: number) => {
+    setSecondsLeft(0)
+    const newField = [...field]
+    newField[index].isOpened = true
+    newField[index].content = '💣'
+    setField(newField)
+  }
+
+  const markCellAsOpened = (field: Cell[], index: number) => {
+    field[index].isOpened = true;
+    field[index].content = String(field[index].meta || '')
+  }
+
+  const openCell = (index: number) => {
+    const newField = [...field]
+
+    markCellAsOpened(newField, index)
+
+    if (newField[index].meta === 0) {
+      openNeighbourOpenCells(newField, index)
+    }
+
+    setField(newField)
+  }
+
+  const markCellAsOpenedIfEligible = (field: Cell[], index: number, baseIndex = -1) => {
+    if (!isIndexInNeighbourRange(index, baseIndex)) return
+    if (field[index].isOpened || field[index].meta < 0) return
+
+    markCellAsOpened(field, index)
+
+    if (!field[index].meta) {
+      openNeighbourOpenCells(field, index)
+    }
+  }
+
+  const openNeighbourOpenCells = (field: Cell[], index: number) => {
+    markCellAsOpenedIfEligible(field, index - 9)
+    markCellAsOpenedIfEligible(field, index - 1, index)
+    markCellAsOpenedIfEligible(field, index + 1, index)
+    markCellAsOpenedIfEligible(field, index + 9)
+  }
+
+  const toggleBombCell = (index: number) => {
+    if (bombsLeft === 0) return
+
+    const newField = [...field]
+    newField[index].isOpened = !newField[index].isOpened
+    newField[index].content = newField[index].isOpened ? '🚩' : ''
+    const newbombsLeft = bombsLeft + (newField[index].isOpened ? -1 : 1)
+    setBombsLeft(newbombsLeft)
+    setField(newField)
+
+    if (!newbombsLeft) {
+      checkForWictory()
+    }
+  }
+
+  const checkForWictory = () => {
+    const validBombs = field.filter(cell => cell.meta < 0 && cell.content === '🚩').length
+
+    if (validBombs === 10) {
+      console.log('Its a victory!')
+    }
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+      <div className="flex flex-row gap-2 mb-2">
+        <div className="border">{bombsLeft}</div>
+        <button onClick={newGameHander}>
+          new game
         </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+        <div className="border">{secondsLeft}</div>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <div
+        className="grid grid-rows-[repeat(9,30px)] grid-cols-[repeat(9,30px)] w-fit"
+        onClick={fieldClickHandler}
+      >
+        {field.map((cell, index) => (
+          <div
+            key={index}
+            className={`size-6 border text-center ${cell.isOpened ? 'border-neutral-400 bg-slate-200' : ''}`}
+            data-meta={cell.meta}
+            data-index={index}
+          >
+            {cell.isOpened ? cell.content : ''}
+            {/* {cell.meta} */}
+          </div>
+        ))}
+      </div>
     </>
   )
 }
