@@ -6,18 +6,13 @@ export type Cell = {
   isOpened: boolean
 }
 
-const getNewCell = () => ({
-  isOpened: false,
-  content: '',
-  meta: 0
-})
+const getRowIndexFromCellIndex = (cellIndex: number) => Math.floor(Math.abs(cellIndex) / 9)
 
-const isIndexInNeighbourRange = (index: number, baseIndex: number) => {
+const isIndexInNeighbourRange = (index: number, baseIndex: number): boolean => {
   if (index < 0 || index > 80) return false
   if (baseIndex === -1) return true
-  const rowIndex1 = Math.floor(Math.abs(baseIndex) / 9)
-  const rowIndex2 = Math.floor(Math.abs(index) / 9)
-  return rowIndex1 === rowIndex2
+
+  return getRowIndexFromCellIndex(baseIndex) === getRowIndexFromCellIndex(index)
 };
 
 const setNeighbourCellContent = (
@@ -33,7 +28,7 @@ const genNewField = () => {
   const field: Cell[] = []
 
   for (let ii = 0; ii < 81; ii++) {
-    field.push(getNewCell())
+    field.push({ isOpened: false, content: '', meta: 0 })
   }
 
   const indexes = new Set<number>()
