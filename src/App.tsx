@@ -58,10 +58,12 @@ function App() {
   const [bombsLeft, setBombsLeft] = useState(0)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [isGamePlayed, setIsGamePlayed] = useState(false)
+  const [gameResolution, setGameResolution] = useState('')
   const intervalId = useRef<number>();
 
   const newGameHander = () => {
     setField(genNewField())
+    setGameResolution('')
     setBombsLeft(10)
     setSecondsLeft(100)
     setIsGamePlayed(true)
@@ -105,6 +107,7 @@ function App() {
     newField[index].isOpened = true
     newField[index].content = '💣'
     setField(newField)
+    setGameResolution('Game over')
   }
 
   const markCellAsOpened = (field: Cell[], index: number) => {
@@ -161,7 +164,8 @@ function App() {
     const validBombs = field.filter(cell => cell.meta < 0 && cell.content === '🚩').length
 
     if (validBombs === 10) {
-      console.log('Its a victory!')
+      setGameResolution('Its a victory!')
+      stopGame()
     }
   }
 
@@ -170,13 +174,13 @@ function App() {
   }, [])
 
   return (
-    <>
       <div className="flex flex-row gap-2 mb-2">
         <div className="border">{bombsLeft}</div>
         <button onClick={newGameHander}>
           new game
         </button>
         <div className="border">{secondsLeft}</div>
+    <div className="m-3">
       </div>
       <div
         className="grid grid-rows-[repeat(9,30px)] grid-cols-[repeat(9,30px)] w-fit"
@@ -190,11 +194,11 @@ function App() {
             data-index={index}
           >
             {cell.isOpened ? cell.content : ''}
-            {/* {cell.meta} */}
           </div>
         ))}
       </div>
-    </>
+      {gameResolution && <p>{gameResolution}</p>}
+    </div>
   )
 }
 
