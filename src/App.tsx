@@ -170,10 +170,6 @@ function App() {
     if (!isGamePlayed) return
 
     intervalId.current = setInterval(() => {
-      console.log('rr')
-      console.log(isGamePlayed)
-      console.log(secondsLeft)
-
       if (isGamePlayed && secondsLeft === 0) {
         clearInterval(intervalId.current);
         return
@@ -186,22 +182,20 @@ function App() {
   }, [isGamePlayed, secondsLeft])
 
   return (
-      <div className="flex flex-row gap-2 mb-2">
-        <div className="border">{bombsLeft}</div>
-        <button onClick={newGameHander}>
-          new game
-        </button>
-        <div className="border">{secondsLeft}</div>
     <div className="m-3">
+      <div className="flex gap-2 mb-2">
+        <div className="border w-[60px] text-center">{bombsLeft}</div>
+        <button className="_flex-grow" onClick={newGameHander}>New game</button>
+        <div className="border w-[60px] text-center">{secondsLeft}</div>
       </div>
       <div
-        className="grid grid-rows-[repeat(9,30px)] grid-cols-[repeat(9,30px)] w-fit"
+        className="grid grid-rows-[repeat(9,30px)] grid-cols-[repeat(9,30px)]"
         onClick={fieldClickHandler}
       >
         {field.map((cell, index) => (
           <div
             key={index}
-            className={`size-6 border text-center ${cell.isOpened ? 'border-neutral-400 bg-slate-200' : ''}`}
+            className={`w-100 h-100 border-collapse border text-center ${cell.isOpened ? 'border-neutral-400 bg-slate-200' : ''}`}
             data-meta={cell.meta}
             data-index={index}
           >
