@@ -67,12 +67,6 @@ function App() {
     setBombsLeft(10)
     setSecondsLeft(100)
     setIsGamePlayed(true)
-    intervalId.current = setInterval(() => {
-      if (isGamePlayed && secondsLeft === 0) {
-        clearInterval(intervalId.current);
-      }
-      setSecondsLeft(secondsLeft => secondsLeft - 1);
-    }, 1000)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,10 +92,14 @@ function App() {
     }
   }
 
-  const terminateGame = (index: number) => {
+  const stopGame = () => {
     clearInterval(intervalId.current)
     setIsGamePlayed(false)
     setSecondsLeft(0)
+  }
+
+  const terminateGame = (index: number) => {
+    stopGame()
 
     const newField = [...field]
     newField[index].isOpened = true
@@ -146,11 +144,10 @@ function App() {
   }
 
   const toggleBombCell = (index: number) => {
-    if (bombsLeft === 0) return
-
     const newField = [...field]
     newField[index].isOpened = !newField[index].isOpened
     newField[index].content = newField[index].isOpened ? '🚩' : ''
+
     const newBombsLeft = bombsLeft + (newField[index].isOpened ? -1 : 1)
     setBombsLeft(newBombsLeft)
     setField(newField)
@@ -170,8 +167,23 @@ function App() {
   }
 
   useEffect(() => {
+    if (!isGamePlayed) return
+
+    intervalId.current = setInterval(() => {
+      console.log('rr')
+      console.log(isGamePlayed)
+      console.log(secondsLeft)
+
+      if (isGamePlayed && secondsLeft === 0) {
+        clearInterval(intervalId.current);
+        return
+      }
+
+      setSecondsLeft(secondsLeft => secondsLeft - 1);
+    }, 1000)
+
     return () => clearInterval(intervalId.current);
-  }, [])
+  }, [isGamePlayed, secondsLeft])
 
   return (
       <div className="flex flex-row gap-2 mb-2">
