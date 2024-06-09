@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 // import reactLogo from './assets/react.svg'
 // import viteLogo from '/vite.svg'
 // import './App.css'
@@ -58,18 +58,27 @@ const genNewField = () => {
 
 function App() {
   const [field, setField] = useState<Cell[]>([])
-  const [bombsLeft, setBombsLeft] = useState<number>(0)
-  const [secondsLeft, setSecondsLeft] = useState<number>(0)
+  const [bombsLeft, setBombsLeft] = useState(0)
+  const [secondsLeft, setSecondsLeft] = useState(0)
+  const [isGamePlayed, setIsGamePlayed] = useState(false)
+  const intervalId = useRef<number>();
 
   const newGameHander = () => {
     setField(genNewField())
     setBombsLeft(10)
     setSecondsLeft(100)
+    setIsGamePlayed(true)
+    intervalId.current = setInterval(() => {
+      if (isGamePlayed && secondsLeft === 0) {
+        clearInterval(intervalId.current);
+      }
+      setSecondsLeft(secondsLeft => secondsLeft - 1);
+    }, 1000)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fieldClickHandler = (event: any) => {
-    if (secondsLeft === 0) return
+    if (!isGamePlayed) return
 
     const { target } = event
     const index = parseInt(target.getAttribute('data-index'), 10)
@@ -91,7 +100,10 @@ function App() {
   }
 
   const terminateGame = (index: number) => {
+    clearInterval(intervalId.current)
+    setIsGamePlayed(false)
     setSecondsLeft(0)
+
     const newField = [...field]
     newField[index].isOpened = true
     newField[index].content = '💣'
@@ -139,11 +151,11 @@ function App() {
     const newField = [...field]
     newField[index].isOpened = !newField[index].isOpened
     newField[index].content = newField[index].isOpened ? '🚩' : ''
-    const newbombsLeft = bombsLeft + (newField[index].isOpened ? -1 : 1)
-    setBombsLeft(newbombsLeft)
+    const newBombsLeft = bombsLeft + (newField[index].isOpened ? -1 : 1)
+    setBombsLeft(newBombsLeft)
     setField(newField)
 
-    if (!newbombsLeft) {
+    if (!newBombsLeft) {
       checkForWictory()
     }
   }
@@ -155,6 +167,10 @@ function App() {
       console.log('Its a victory!')
     }
   }
+
+  useEffect(() => {
+    return () => clearInterval(intervalId.current);
+  }, [])
 
   return (
     <>
