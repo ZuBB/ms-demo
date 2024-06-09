@@ -92,20 +92,20 @@ function App() {
     }
   }
 
-  const stopGame = () => {
+  const stopGame = (summary: string) => {
     clearInterval(intervalId.current)
     setIsGamePlayed(false)
     setSecondsLeft(0)
+    setGameResolution(summary)
   }
 
   const terminateGame = (index: number) => {
-    stopGame()
-
     const newField = [...field]
     newField[index].isOpened = true
     newField[index].content = '💣'
     setField(newField)
-    setGameResolution('Game over')
+
+    stopGame('Game over')
   }
 
   const markCellAsOpened = (field: Cell[], index: number) => {
@@ -161,8 +161,7 @@ function App() {
     const validBombs = field.filter(cell => cell.meta < 0 && cell.content === '🚩').length
 
     if (validBombs === 10) {
-      setGameResolution('Its a victory!')
-      stopGame()
+      stopGame('Its a victory!')
     }
   }
 
@@ -171,7 +170,7 @@ function App() {
 
     intervalId.current = setInterval(() => {
       if (isGamePlayed && secondsLeft === 0) {
-        clearInterval(intervalId.current);
+        stopGame('Game over')
         return
       }
 
